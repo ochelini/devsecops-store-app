@@ -1,0 +1,42 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: web-ui
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t web-ui:${{ github.sha }} .
+
+      - name: Tag image
+        run: |
+          docker tag web-ui:${{ github.sha }} \
+          208295046981.dkr.ecr.us-east-2.amazonaws.com/web-ui:${{ github.sha }}
+
+      - name: Push image
+        run: |
+          docker push \
+          208295046981.dkr.ecr.us-east-2.amazonaws.com/web-ui:${{ github.sha }}
